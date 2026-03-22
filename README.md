@@ -2,7 +2,7 @@
 
 A gui to track progress on anything - such as revision
 Designed to guilt trip you and keep you addicted to keeping up your productivity steak, with full customisibility
-
+File selection is kinda ugly, sorry about that had to use tkinter cos pygame dosent work as well for it on linux
 ## Install
 ```bash
 # Recommended
