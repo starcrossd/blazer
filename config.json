@@ -1,7 +1,7 @@
 {
   "USER": {
     "colourscheme": "ocean",
-    "background": "dark23",
+    "background": "gruvbox",
     "font": "mono",
     "fontsize": 40
   },
@@ -32,7 +32,7 @@
       "darkrose":  [[40,20,30],   [75,35,55]],
       "darkgreen": [[15,30,20],   [30,60,40]],
       "darkpurple":[[25,15,40],   [55,30,85]],
-      "nord":      [[46,52,64],   [67,76,94]],
+      "nord":      [[37,47,54],   [67,76,94]],
       "gruvbox":   [[40,40,40],   [80,73,69]],
       "catppuccin":[[30,30,46],   [49,50,68]],
       "everforest":[[29,32,33],   [50,55,45]],
