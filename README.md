@@ -30,6 +30,8 @@ If you want to use a mouse to add files or a commit message click on the provide
 ### Commit Screem
     f - adds a file 
     j - allows you to start typing the commit message, `Enter` to stop 
+
+
 # Customisation
 Go into `config.json`, under the `USER` section, select the options you want to use for your Blazer app
 

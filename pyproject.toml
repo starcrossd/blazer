@@ -1,6 +1,6 @@
 [project]
 name = "blazer"
-version = "0.1.0"
+version = "0.1.1"
 description = "A way to track anything productivity and keep you coming back for more, version will be changed when program is finished"
 authors = [{name = "Alex G"}]
 requires-python = ">=3"

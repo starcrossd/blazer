@@ -8,6 +8,7 @@ from tkinter import filedialog
 
 CONF = os.path.join(os.path.dirname(__file__), 'config.json')
 COMMITSJSON = os.path.join(os.path.dirname(__file__), '.commits.json')
+REPOSDIR = os.path.join(os.path.dirname(__file__), '.repos')
 
 HEIGHT = 640
 WIDTH = 640
@@ -40,8 +41,6 @@ SMALLFONT = pygame.font.SysFont(config['font'][userconfig['font']], userconfig['
 FONT = pygame.font.SysFont(config['font'][userconfig['font']], userconfig['fontsize'])
 BIGFONT = pygame.font.SysFont(config['font'][userconfig['font']], userconfig['fontsize'] + 20)
 
-
-timeframeinmonths = 1
 
 date = datetime.date.today()
 splitdate = str(date).split("-")
@@ -175,13 +174,40 @@ def displaycommitscreen(files,message):
     square(232, 500, 175, 45, DARK, 5)
     screen.blit(text(FONT, "COMMIT", MID), (240, 500))
 
-    screen.blit(text(SMALLFONT, message, MID), (50,100))
+    fontwidth,fontheight = SMALLFONT.size('m')
+
+    charsperline = int(560/fontwidth)
+    rows = int(180/fontheight)
+
+    words = message.split()
+    lines = []
+    current = ''
+
+    for word in words:
+        if SMALLFONT.size(current + word)[0] < 560:
+            current += word + " "
+        else:
+            lines.append(current)
+            current = word + " "
+    lines.append(current)
+
+    for i,line in enumerate(lines):
+        screen.blit(text(SMALLFONT, str(line), MID), (50, 100 + i * 20))
 
     if len(files) > 0:
         for file in files:
+            displayfile = file
             index = files.index(file)
             ycord = 300 + index * 20
-            screen.blit(text(SMALLFONT, file, MID), (50,ycord))
+
+            if len(file) > charsperline:
+                charstodel = int(len(file) - charsperline) - 4
+                displayfile = file[:charsperline-charstodel] + '...'
+
+            if files.index(file) == rows:
+                screen.blit(text(SMALLFONT, '...', MID), (50,ycord))
+                break
+            screen.blit(text(SMALLFONT, displayfile, MID), (50,ycord))
 
 
 def main():
