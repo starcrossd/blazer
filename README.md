@@ -169,7 +169,18 @@ if typing:
         message += event.unicode  # ---> add character to message
 ```
 `event.unicode` is used rather than checking each key individually as it handles any character the user types, including symbols and spaces
+## Fixing overflows
+When you type or add a file sometimes it may be too long...
+Blazer handles this by checking the actual rendered pixel width using pygame's font renderer, trimming characters off the end until it fits, then slapping a ... on. Its slower than guessing based on character count but it actually works, which is nice.
+```python
+pythondisplayfile = file
 
+while SMALLFONT.size(displayfile)[0] > 560: # ---> keep trimming until it fits
+    displayfile = displayfile[:-1]           # ---> chop one character at a time
+
+displayfile = displayfile[:-3] + '...'      # ---> replace last 3 chars with ellipsis
+```
+`SMALLFONT.size(displayfile)[0]` returns the rendered pixel width of the string, so unlike estimating from a single character this accounts for the actual width of every character in the string.
 ## Saving commits
 Commits are saved to a hidden `.commits.json` file in the same directory as the program.
 Each commit is a dictionary with a message, list of files, and a timestamp:
