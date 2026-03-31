@@ -213,3 +213,24 @@ def commitsperday(commits):
     return amounts
 ```
 Then each square is coloured based on that count — more commits means a lighter square, no commits stays dark. The grid always starts from the 1st of the current month so the squares line up with the actual calendar days.
+
+## Repos
+`Repos` are where commits to do with specific topics are sent to, they get a copy of the committed file and they have thier own log
+On the repos screen you are able to `scroll` with your mouse to see all of your repos.
+this is done through:
+```python
+def displayreposscreen(repos, typing, reponame, scroll):
+    screen.blit(text(BIGFONT, "Repos", MID), (50, 20))
+    ...
+    ycord = 100 + len(repos) * 70 - scroll # -----> this displaces each row by the scroll amount
+    square(190, ycord, 210, 60, DARK, 5)
+    screen.blit(text(FONT, 'add repo', MID), (200, ycord + 15))
+    ... 
+#and 
+        ...
+        elif event.type == pygame.MOUSEWHEEL:
+                scroll -= event.y * 70  # ----> 70 is the height of each row
+                scroll = max(0, scroll)  
+                
+#scroll is then used as an argument in displayreposscreen()
+```

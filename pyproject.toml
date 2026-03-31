@@ -1,6 +1,6 @@
 [project]
 name = "blazer"
-version = "0.1.2"
+version = "0.1.3"
 description = "A way to track anything productivity and keep you coming back for more, you can see what youve been working on with specific repos, just like github"
 authors = [{name = "Alex G"}]
 requires-python = ">=3"

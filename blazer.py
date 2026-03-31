@@ -37,7 +37,7 @@ BGCOLOURS = tuple(config['background'][userconfig['background']])
 BGPRIMARY = BGCOLOURS[0]
 BGSECONDARY = BGCOLOURS[1]
 
-
+SMALLESTFONT = pygame.font.SysFont(config['font'][userconfig['font']], userconfig['fontsize'] - 25)
 SMALLFONT = pygame.font.SysFont(config['font'][userconfig['font']], userconfig['fontsize'] - 20)
 FONT = pygame.font.SysFont(config['font'][userconfig['font']], userconfig['fontsize'])
 BIGFONT = pygame.font.SysFont(config['font'][userconfig['font']], userconfig['fontsize'] + 20)
@@ -168,11 +168,9 @@ def addfile():
     return filepath
 
 def getrepos():
-    os.chdir(REPOSDIR)
-    repos = os.listdir()
-    return repos
+        return os.listdir(REPOSDIR)
 
-def dipslayhomescreen(commits):
+def displayhomescreen(commits):
     screen.blit(text(BIGFONT, "Blazer", MID), (50, 20))
     square(50, 90, 20, 20, DARKEST, 5)
     square(80, 90, 20, 20, DARK, 5)
@@ -204,8 +202,11 @@ def displaycommitscreen(files, message, repo):
     square(40, 290, 560, 180, BGSECONDARY, 5)
     screen.blit(text(FONT, "Files:", MID), (50, 228))
 
-    square(232, 500, 175, 45, DARK, 5)
-    screen.blit(text(FONT, "COMMIT", MID), (240, 500))
+    square(40, 500, 175, 45, DARK, 5)
+    screen.blit(text(FONT, "COMMIT", MID), (40, 500))
+
+    square(400, 500, 175, 45, DARK, 5)
+    screen.blit(text(FONT, "Home", MID), (400, 500))
 
     fontwidth,fontheight = SMALLFONT.size('m')
 
@@ -244,20 +245,43 @@ def displaycommitscreen(files, message, repo):
                 break
             screen.blit(text(SMALLFONT, displayfile, MID), (50,ycord))
 
-def displayreposscreen(repos, typing, reponame):
+def displayreposscreen(repos, typing, reponame, scroll):
     screen.blit(text(BIGFONT, "Repos", MID), (50, 20))
 
-    for i, repo in enumerate(repos):
-        square(40, 100 + i * 70, 560, 60, BGSECONDARY, 5)
-        screen.blit(text(FONT, repo, MID), (50, 115 + i * 70))
+    square(400, 30, 175, 45, DARK, 5)
+    screen.blit(text(FONT, "Back", MID), (400, 30))
 
-    ycord = 100 + len(repos) * 70
+    for i, repo in enumerate(repos):
+        y = 100 + i * 70 - scroll
+        square(40, y, 560, 60, BGSECONDARY, 5)
+        screen.blit(text(FONT, repo, MID), (50, y + 15))
+
+    ycord = 100 + len(repos) * 70 - scroll
     square(190, ycord, 210, 60, DARK, 5)
     screen.blit(text(FONT, 'add repo', MID), (200, ycord + 15))
 
     if typing:
         square(40, ycord + 80, 560, 60, BGSECONDARY, 5)
         screen.blit(text(FONT, reponame, MID), (50, ycord + 95))
+
+def displayspecificrepo(repo):
+    screen.blit(text(BIGFONT, repo, MID), (50, 20))
+    with open(os.path.join(REPOSDIR, repo, 'log.txt')) as f:
+        lines = f.readlines()
+    for i, line in enumerate(reversed(lines[-5:])):
+        ycord = 90 + 80 * i
+        square(40, ycord, 500, 60, BGSECONDARY, 5)
+        parts = line.split('~')
+        for part in parts:
+            screen.blit(text(SMALLESTFONT, part, MID), (50, ycord + 20*parts.index(part)))
+
+    square(270,550,200,50,DARK,5)
+    screen.blit(text(SMALLFONT, "Add commit", MID), (310, 565))
+
+    square(50,550,200,50,DARK,5)
+    screen.blit(text(SMALLFONT, "Back", MID), (60, 565))
+
+
 
 def main():
     setup()
@@ -271,6 +295,8 @@ def main():
 
     files = []
     commits = loadcommits()
+
+    scroll = 0
 
     while running:
         for event in pygame.event.get():
@@ -287,13 +313,11 @@ def main():
                         state='commit'
 
             elif state == 'commit':
-                if event.type == pygame.DROPFILE:
-                    files.append(addfile())
-
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if pygame.Rect(232,500,175,45).collidepoint(event.pos):
+                    if pygame.Rect(40, 500, 175, 45).collidepoint(event.pos):
                         if len(text) > 0 and len(files) > 0:
                             Commit(text, files, str(date), repo).savecommit()
+                            commits = loadcommits()
                         state = 'home'
                         files = []
                         repo = 'misc'
@@ -304,6 +328,8 @@ def main():
                         typing = False
                     elif pygame.Rect(40, 90, 560, 120).collidepoint(event.pos):
                         typing = True
+                    elif pygame.Rect(400, 500, 175, 45).collidepoint(event.pos):
+                        state = 'home'
 
                 if event.type == pygame.KEYDOWN:
                     if typing:
@@ -320,14 +346,17 @@ def main():
                         if event.key == pygame.K_j:
                             typing = True
 
+
             elif state == 'repos':
                 addbuttonycord = 100 + len(getrepos()) * 70
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if pygame.Rect(190, addbuttonycord, 210, 60).collidepoint(event.pos):
                         typing = True
+                    elif pygame.Rect(00, 30, 175, 45).collidepoint(event.pos):
+                            state = 'home'
                     for i, reponame in enumerate(getrepos()):
                         if pygame.Rect(40, 100 + i * 70, 560, 60).collidepoint(event.pos):
-                            state='commit'
+                            state='specificrepo'
                             repo = reponame
 
                 elif event.type == pygame.KEYDOWN:
@@ -343,14 +372,27 @@ def main():
                             text = text[:-1]
                         else:
                             text += event.unicode
+                elif event.type == pygame.MOUSEWHEEL:
+                        scroll -= event.y * 70
+                        scroll = max(0, scroll)
+
+            elif state == 'specificrepo':
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if pygame.Rect(270,550,200,50).collidepoint(event.pos):
+                        state = 'commit'
+                    elif pygame.Rect(50,550,200,50).collidepoint(event.pos):
+                        state = 'repos'
+
         screen.fill(BGPRIMARY)
 
         if state == 'home':
-            dipslayhomescreen(commits)
+            displayhomescreen(commits)
         elif state == 'commit':
             displaycommitscreen(files,text,repo)
         elif state == 'repos':
-            displayreposscreen(getrepos(), typing, text)
+            displayreposscreen(getrepos(), typing, text,scroll)
+        elif state == 'specificrepo':
+            displayspecificrepo(repo)
 
         pygame.display.flip()
         clock.tick(60)
