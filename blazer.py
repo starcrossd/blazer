@@ -229,10 +229,9 @@ def displaycommitscreen(files, message, repo):
         screen.blit(text(SMALLFONT, str(line), MID), (50, 100 + i * 20))
 
     if len(files) > 0:
-        for file in files:
+        for i,file in enumerate(files):
             displayfile = file
-            index = files.index(file)
-            ycord = 300 + index * 20
+            ycord = 300 + i * 20
 
             if len(file) > charsperline:
                 displayfile = file
@@ -240,7 +239,7 @@ def displaycommitscreen(files, message, repo):
                     displayfile = displayfile[:-1]
                 displayfile = displayfile[:-3] + '...'
 
-            if files.index(file) == rows:
+            if i == rows:
                 screen.blit(text(SMALLFONT, '...', MID), (50,ycord))
                 break
             screen.blit(text(SMALLFONT, displayfile, MID), (50,ycord))
@@ -275,11 +274,16 @@ def displayspecificrepo(repo):
         for part in parts:
             screen.blit(text(SMALLESTFONT, part, MID), (50, ycord + 20*parts.index(part)))
 
-    square(270,550,200,50,DARK,5)
-    screen.blit(text(SMALLFONT, "Add commit", MID), (310, 565))
-
-    square(50,550,200,50,DARK,5)
+    square(30,550,100,50,DARK,5)
     screen.blit(text(SMALLFONT, "Back", MID), (60, 565))
+
+    square(140,550,140,50,DARK,5)
+    screen.blit(text(SMALLFONT, "Add commit", MID), (150, 565))
+
+
+    square(500,550,130,50,DARK,5)
+    screen.blit(text(SMALLFONT, "Delete", MID), (520, 565))
+    screen.blit(text(SMALLESTFONT, "(hold)", MID), (525, 585))
 
 
 
@@ -290,20 +294,23 @@ def main():
     typing = False
 
     state = 'home'
-    text = ''
+    typedtext = ''
     repo = 'misc'
 
     files = []
     commits = loadcommits()
 
     scroll = 0
+    deleteholdtime = 1500
+
+    deleteholdstart = None
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if state == 'home':
-                if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if pygame.Rect(50, 550, 200, 50).collidepoint(event.pos):
                         state = 'commit'
                     if pygame.Rect(270,550,200,50).collidepoint(event.pos):
@@ -313,13 +320,14 @@ def main():
                         state='commit'
 
             elif state == 'commit':
-                if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if pygame.Rect(40, 500, 175, 45).collidepoint(event.pos):
-                        if len(text) > 0 and len(files) > 0:
-                            Commit(text, files, str(date), repo).savecommit()
+                        if len(typedtext) > 0 and len(files) > 0:
+                            Commit(typedtext, files, str(date), repo).savecommit()
                             commits = loadcommits()
                         state = 'home'
                         files = []
+                        typedtext = ''
                         repo = 'misc'
                         typing = False
 
@@ -330,15 +338,17 @@ def main():
                         typing = True
                     elif pygame.Rect(400, 500, 175, 45).collidepoint(event.pos):
                         state = 'home'
+                        files = []
+                        typedtext = ''
 
                 if event.type == pygame.KEYDOWN:
                     if typing:
                         if event.key == pygame.K_RETURN:
                             typing = False
                         elif event.key == pygame.K_BACKSPACE:
-                            text = text[:-1]
+                            typedtext = typedtext[:-1]
                         else:
-                            text += event.unicode
+                            typedtext += event.unicode
 
                     else:
                         if event.key == pygame.K_f:
@@ -349,29 +359,30 @@ def main():
 
             elif state == 'repos':
                 addbuttonycord = 100 + len(getrepos()) * 70
-                if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     if pygame.Rect(190, addbuttonycord, 210, 60).collidepoint(event.pos):
                         typing = True
-                    elif pygame.Rect(00, 30, 175, 45).collidepoint(event.pos):
+                    elif pygame.Rect(400, 30, 175, 45).collidepoint(event.pos):
                             state = 'home'
                     for i, reponame in enumerate(getrepos()):
-                        if pygame.Rect(40, 100 + i * 70, 560, 60).collidepoint(event.pos):
+                        if pygame.Rect(40, 100 + i * 70 - scroll, 560, 60).collidepoint(event.pos):
                             state='specificrepo'
                             repo = reponame
 
                 elif event.type == pygame.KEYDOWN:
                     if typing:
                         if event.key == pygame.K_RETURN:
-                            if len(text) > 0:
-                                repopath = os.path.join(REPOSDIR, text)
+                            if len(typedtext) > 0:
+                                repopath = os.path.join(REPOSDIR, typedtext)
                                 os.mkdir(repopath)
-                                open(os.path.join(repopath, 'log.txt'), "w").close()
-                                text = ''
+                                loginit = f'{typedtext} made on {date}'
+                                open(os.path.join(repopath, 'log.txt'), "w").write(loginit)
+                                typedtext = ''
                             typing = False
                         elif event.key == pygame.K_BACKSPACE:
-                            text = text[:-1]
+                            typedtext = typedtext[:-1]
                         else:
-                            text += event.unicode
+                            typedtext += event.unicode
                 elif event.type == pygame.MOUSEWHEEL:
                         scroll -= event.y * 70
                         scroll = max(0, scroll)
@@ -382,17 +393,30 @@ def main():
                         state = 'commit'
                     elif pygame.Rect(50,550,200,50).collidepoint(event.pos):
                         state = 'repos'
+                    elif pygame.Rect(500,550,130,50).collidepoint(event.pos):
+                        deleteholdstart = pygame.time.get_ticks()
+
+                if event.type == pygame.MOUSEBUTTONUP :
+                        if deleteholdstart is not None:
+                            deleteholdstart = None
 
         screen.fill(BGPRIMARY)
 
         if state == 'home':
             displayhomescreen(commits)
         elif state == 'commit':
-            displaycommitscreen(files,text,repo)
+            displaycommitscreen(files,typedtext,repo)
         elif state == 'repos':
-            displayreposscreen(getrepos(), typing, text,scroll)
+            displayreposscreen(getrepos(), typing, typedtext,scroll)
         elif state == 'specificrepo':
             displayspecificrepo(repo)
+            if deleteholdstart is not None:
+                now = pygame.time.get_ticks()
+                if now - deleteholdstart >= deleteholdtime:
+                    repopath = os.path.join(REPOSDIR, repo)
+                    shutil.rmtree(repopath)
+                    state = 'repos'
+                    deleteholdstart = None
 
         pygame.display.flip()
         clock.tick(60)
