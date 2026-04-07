@@ -42,6 +42,11 @@ SMALLFONT = pygame.font.SysFont(config['font'][userconfig['font']], userconfig['
 FONT = pygame.font.SysFont(config['font'][userconfig['font']], userconfig['fontsize'])
 BIGFONT = pygame.font.SysFont(config['font'][userconfig['font']], userconfig['fontsize'] + 20)
 
+gap = 10
+step = 40 + gap
+startx = WIDTH * 0.12
+starty = HEIGHT * 0.3
+squaresperrow = int((WIDTH * 0.8) // step)
 
 date = datetime.date.today()
 splitdate = str(date).split("-")
@@ -111,12 +116,11 @@ def text(font, text, colour):
 
 
 def displaypastdays(days, commits):
-    gap = 10
-    step = 40 + gap
-    startx = WIDTH * 0.12
-    starty = HEIGHT * 0.3
-    squaresperrow = int((WIDTH * 0.8) // step)
-    amounts = commitsperday(commits)
+    amounts = commitsperday(commits, 'amounts')
+    if not amounts:
+        return
+    maxcommits = max(amounts.values())
+
     monthstart = date.replace(day=1)
 
     for i in range(days):
@@ -127,16 +131,17 @@ def displaypastdays(days, commits):
         squaredate = str(monthstart + datetime.timedelta(days=i))
         amountofcommits = amounts.get(squaredate, 0)
 
-        if amountofcommits == 0:
-            colour = DARKEST
-        elif amountofcommits == 1:
-            colour = DARK
-        elif amountofcommits == 2:
-            colour = MID
-        elif amountofcommits ==3:
-            colour = LIGHT
-        else:
+        quartile = amountofcommits / maxcommits
+        if quartile >= 0.75:
             colour = LIGHTEST
+        elif quartile >= 0.5:
+            colour = LIGHT
+        elif quartile >= 0.25:
+            colour = MID
+        elif quartile > 0:
+            colour = DARK
+        else:
+            colour = DARKEST
 
         square(x, y, 40, 40, colour, 5)
 
@@ -151,13 +156,21 @@ def loadcommits():
         commits.append(commit)
     return commits
 
-def commitsperday(commits):
+def commitsperday(commits,mod):
     amounts = {}
-    for commit in commits:
-        datestr = commit[2]
-        amounts[datestr] = amounts.get(datestr, 0) + 1
 
-    return amounts
+    if mod == 'amounts':
+        for commit in commits:
+            datestr = commit[2]
+            amounts[datestr] = amounts.get(datestr, 0) + 1
+        return amounts
+    elif mod == 'details':
+        for commit in commits:
+            datestr = commit[2]
+            if datestr not in amounts:
+                amounts[datestr] = []
+            amounts[datestr].append(commit)
+        return amounts
 
 def addfile():
     filepath = filedialog.askopenfilename(
@@ -285,8 +298,27 @@ def displayspecificrepo(repo):
     screen.blit(text(SMALLFONT, "Delete", MID), (520, 565))
     screen.blit(text(SMALLESTFONT, "(hold)", MID), (525, 585))
 
+def displaycommitsonday(day, commits, scroll):
+    screen.blit(text(FONT, day, MID),(40,40 - scroll))
 
+    square(400, 40 - scroll, 175, 45, DARK, 5)
+    screen.blit(text(FONT, "Back", MID), (400, 40 - scroll))
 
+    details = commitsperday(commits, 'details').get(day, [])
+    for i, commit in enumerate(details):
+        ycord = 100 + 80 * i - scroll
+        square(40, ycord, 560, 60, BGSECONDARY, 5)
+
+        msg = commit[0]
+        while SMALLFONT.size(msg)[0] > 520:
+            msg = msg[:-1]
+        if msg != commit[0]:
+            msg = msg[:-3] + '...'
+
+        repo = commit[3]
+
+        screen.blit(text(SMALLFONT, msg, MID), (50, ycord + 10))
+        screen.blit(text(SMALLESTFONT, repo, MID), (50, ycord + 35))
 def main():
     setup()
 
@@ -296,6 +328,7 @@ def main():
     state = 'home'
     typedtext = ''
     repo = 'misc'
+    selectedday = ''
 
     files = []
     commits = loadcommits()
@@ -311,13 +344,25 @@ def main():
                 running = False
             if state == 'home':
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    monthstart = date.replace(day=1)
+                    for i in range(daysincurrentmonth):
+                        row = i // squaresperrow
+                        col = i % squaresperrow
+                        x = startx + col * step
+                        y = starty + row * step
+                        if pygame.Rect(x, y, 40, 40).collidepoint(event.pos):
+                            selectedday = str(monthstart + datetime.timedelta(days=i))
+                            state = 'commitsonday'
+                            break
                     if pygame.Rect(50, 550, 200, 50).collidepoint(event.pos):
                         state = 'commit'
                     if pygame.Rect(270,550,200,50).collidepoint(event.pos):
                         state = 'repos'
-                if event.type == pygame.KEYDOWN:
+                elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_a:
-                        state='commit'
+                        state = 'commit'
+                    if event.key == pygame.K_r:
+                        state = 'repos'
 
             elif state == 'commit':
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -355,12 +400,15 @@ def main():
                             files.append(addfile())
                         if event.key == pygame.K_j:
                             typing = True
-
+                        if event.key == pygame.K_h:
+                            state = 'home'
+                            files = []
+                            typedtext = ''
 
             elif state == 'repos':
                 addbuttonycord = 100 + len(getrepos()) * 70
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if pygame.Rect(190, addbuttonycord, 210, 60).collidepoint(event.pos):
+                    if pygame.Rect(190, addbuttonycord - scroll, 210, 60).collidepoint(event.pos):
                         typing = True
                     elif pygame.Rect(400, 30, 175, 45).collidepoint(event.pos):
                             state = 'home'
@@ -383,15 +431,20 @@ def main():
                             typedtext = typedtext[:-1]
                         else:
                             typedtext += event.unicode
+                    else:
+                        if event.key == pygame.K_h:
+                            state = 'home'
+                        if event.key == pygame.K_a:
+                            typing = True
                 elif event.type == pygame.MOUSEWHEEL:
                         scroll -= event.y * 70
                         scroll = max(0, scroll)
 
             elif state == 'specificrepo':
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if pygame.Rect(270,550,200,50).collidepoint(event.pos):
+                    if pygame.Rect(140,550,140,50).collidepoint(event.pos):
                         state = 'commit'
-                    elif pygame.Rect(50,550,200,50).collidepoint(event.pos):
+                    elif pygame.Rect(30,550,100,50).collidepoint(event.pos):
                         state = 'repos'
                     elif pygame.Rect(500,550,130,50).collidepoint(event.pos):
                         deleteholdstart = pygame.time.get_ticks()
@@ -399,11 +452,24 @@ def main():
                 if event.type == pygame.MOUSEBUTTONUP :
                         if deleteholdstart is not None:
                             deleteholdstart = None
+            elif state == 'commitsonday':
+                if event.type == pygame.MOUSEWHEEL:
+                    scroll -= event.y * 70
+                    scroll = max(0, scroll)
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if pygame.Rect(400, 30 - scroll, 175, 45).collidepoint(event.pos):
+                        state = 'home'
+                        scroll = 0
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_h:
+                        state = 'home'
+                        scroll = 0
 
         screen.fill(BGPRIMARY)
 
         if state == 'home':
             displayhomescreen(commits)
+            repo = 'misc'
         elif state == 'commit':
             displaycommitscreen(files,typedtext,repo)
         elif state == 'repos':
@@ -417,6 +483,8 @@ def main():
                     shutil.rmtree(repopath)
                     state = 'repos'
                     deleteholdstart = None
+        elif state == 'commitsonday':
+            displaycommitsonday(selectedday,commits,scroll)
 
         pygame.display.flip()
         clock.tick(60)

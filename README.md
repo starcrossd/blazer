@@ -1,11 +1,13 @@
 # Blazer
 
 A gui to track progress on anything - such as revision, in a way to provide maximum customisation options to make it your own.
-Designed to guilt trip you and keep you addicted to keeping up your productivity streak, with full customisability.
-File selection is kinda ugly, sorry about that - had to use tkinter cos pygame doesn't work as well for it.
-Currently only linux compatible, not sure about cross platform compatibility but works on linux.
+Built as a small proof of concept / passion project to practice code and get experience making guis as I've only made clis til now.
+The github commit history essentially got me addicted to coding for a bit just so I can see more green squares on the timeline so I thought if I made a general purpouse one I'd want to study more.
+File selection is kinda ugly, sorry about that - had to use tkinter cos pygame doesn't work as well for it, maybe changed in a future patch.
+
 
 ## Install
+To install this ,as its a python program, you need to install pip or pipx
 ```bash
 # Recommended
 pipx install git+https://github.com/starcrossd/blazer.git
@@ -19,20 +21,31 @@ pip install --user git+https://github.com/starcrossd/blazer.git
 pipx uninstall Blazer
 ```
 
-## Usage
+## Usage - *IMPORTANT PLEASE READ*
 ```bash
-blzr # runs the program
+blzr # runs the program -> thats if youre using terminal, as its a gui you can also find it in aplication managers
 ```
 You can use the gui buttons to operate the program or specific keys whilst in the window.
 If you want to use a mouse to add files or a commit message click on the provided area.
 
 ### Home Screen
-    a - opens the Commit Screen
+    a - opens the misc Commit Screen
+    r - opens repo view
+The misc commit folder is for general or quick commits that dont fit neatly into anything else or you cant be bothered to make a repo
+To view wht has been commited on a specific day of the month simply click on that square on the homescreen
 
 ### Commit Screen
     f - adds a file 
     j - allows you to start typing the commit message, `Enter` to stop
-    Clicking `Home` discards the current commit and returns to the home screen
+    h - returns to home screen
+Clicking `Home` discards the current commit and returns to the home screen
+    
+### Repos screen
+    a - allows you to start typing name of new repo
+    h - returns to home screen
+    
+### Specific day screen 
+    h - returns to home screen
 
 ### Repo Screen
 Clicking a repo opens it, showing the 5 most recent commits from its log.
@@ -44,7 +57,7 @@ Go into `config.json`, under the `USER` section, select the options you want to 
 
 *For example*: 
 ```json
-//one of my preferred setups
+//example setup
   "USER": {
     "colourscheme": "forest",   // Changing forest -> ocean to change the base pallet to be blue
     "background": "dark23",     // Changing dark23 -> solarized to change the background
