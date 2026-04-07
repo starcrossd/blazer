@@ -18,7 +18,7 @@ pip install --user git+https://github.com/starcrossd/blazer.git
 
 ## Uninstall
 ```bash
-pipx uninstall Blazer
+pipx uninstall blazer
 ```
 
 ## Usage - *IMPORTANT PLEASE READ*
