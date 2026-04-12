@@ -9,8 +9,8 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install pyinstaller
-      - run: pyinstaller --onefile yourscript.py
-      - uses: actions/upload-artifact@v3
+      - run: pyinstaller --onefile blazer.py
+      - uses: actions/upload-artifact@v4
         with:
           name: exe
           path: dist/
